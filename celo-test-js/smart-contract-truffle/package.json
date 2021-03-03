@@ -10,5 +10,6 @@
   "license": "ISC",
   "devDependencies": {
     "truffle": "^5.2.2"
-  }
+  },
+  "dependencies": {}
 }
