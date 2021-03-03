@@ -1,0 +1,14 @@
+{
+  "name": "moola-test-deploy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tahlil",
+  "license": "ISC",
+  "devDependencies": {
+    "truffle": "^5.2.2"
+  }
+}
