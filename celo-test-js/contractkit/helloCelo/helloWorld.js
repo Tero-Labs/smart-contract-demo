@@ -21,9 +21,8 @@ async function initContract(){
         HelloWorld.abi,
         deployedNetwork && deployedNetwork.address
     );
-
-    getName(instance)
-    setName(instance, "Moola.")
+    console.log("Address: ");
+    console.log(deployedNetwork && deployedNetwork.address);
     getName(instance)
 }
 
