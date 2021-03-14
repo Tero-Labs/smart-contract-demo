@@ -8,7 +8,14 @@ const LendingPool = require('../helloCelo/build/contracts/LendingPool.json');
 const web3 = kit.web3;
 const eth = web3.eth;
 
-
+const INTEREST_RATE = {
+    NONE: 0,
+    STABLE: 1,
+    VARIABLE: 2,
+    1: 'STABLE',
+    2: 'VARIABLE',
+    0: 'NONE',
+  };
 
 function BN(num) {
     return new BigNumber(num);
@@ -16,7 +23,6 @@ function BN(num) {
 
 const getLendingPoolReserveData = async (reserve, lendingPool) => {
     try {
-       
 
         const configData = await lendingPool.methods.getReserveConfigurationData(reserve).call();
 
@@ -65,14 +71,14 @@ const getBLocks = async (fromBlockNumber, toBlockNumber) => {
 
 const getLogs = async (fromBlockNumber, toBlockNumber) => {
     try {
-        const logs = await web3.eth.getPastLogs({fromBlock:fromBlockNumber, toBlock:toBlockNumber});
-        console.log("Logs: ");
-        console.log(logs);
+        const logs = await web3.eth.getPastLogs({ fromBlock: fromBlockNumber, toBlock: toBlockNumber });
+        // console.log("Logs: ");
+        // console.log(logs);
         return logs;
     } catch (error) {
         console.log("Log error: " + error);
     }
-   
+
 }
 
 const getCoins = async () => {
@@ -87,7 +93,7 @@ const getCoins = async () => {
 }
 
 const getUserAccountData = async (lendingPool, addresses) => {
-    
+
     for (let address of addresses) {
         console.log("Address: " + address);
         let userAccountData = await lendingPool.methods.getUserAccountData(address).call();
@@ -105,14 +111,33 @@ const getUserAccountData = async (lendingPool, addresses) => {
     }
 }
 
-const getUserReserveData  = async (lendingPool) => {
-    const coins = getCoins();
+const getUserReserveData = async (lendingPool, addresses) => {
+    const coins = await getCoins();
+    for (let address of addresses) {
+
+        for (let coin of coins) {
+            const data = await lendingPool.methods.getUserReserveData(coin.reserveAddress, address).call();
+            const parsedData = {
+                Deposited: data.currentATokenBalance,
+                Borrowed: data.principalBorrowBalance,
+                Debt: data.currentBorrowBalance,
+                RateMode: INTEREST_RATE[data.borrowRateMode],
+                BorrowRate: data.borrowRate,
+                LiquidityRate: data.liquidityRate,
+                OriginationFee: data.originationFee,
+                BorrowIndex: data.variableBorrowIndex,
+                LastUpdate: (new Date(BN(data.lastUpdateTimestamp).multipliedBy(1000).toNumber())).toLocaleString(),
+                IsCollateral: data.usageAsCollateralEnabled,
+            };
+            console.log("Address: " + address + " Coin: " + coin.name);
+            console.table(parsedData);
+        }
+    }
 
 }
 
-
 const getLendingPoolData = async (lendingPool) => {
-    const coins = getCoins();
+    const coins = await getCoins();
     for (let coin of coins) {
         let data = await getLendingPoolReserveData(coin.reserveAddress, lendingPool);
         console.log("At " + new Date().toLocaleDateString(undefined, {
@@ -136,23 +161,22 @@ const getLendingPoolData = async (lendingPool) => {
             const blocksLatest = await web3.eth.getBlock("latest")
                 .catch((err) => { throw new Error(`Could not fetch latest block: ${err}`); });
             const latestBlockNumber = blocksLatest.number;
-            const fromBlockNumber = latestBlockNumber-11, toBlockNumber = latestBlockNumber -10;
+            const fromBlockNumber = latestBlockNumber - 11, toBlockNumber = latestBlockNumber - 10;
             console.log('Latest block: ', latestBlockNumber);
-            //await getLendingPoolData(lendingPool);
-            // await getBLocks(fromBlockNumber, toBlockNumber);
+            await getLendingPoolData(lendingPool);
+            await getBLocks(fromBlockNumber, toBlockNumber);
             let logs = await getLogs(fromBlockNumber, toBlockNumber);
             let addresses = logs.map((log) => log.address);
-            let uniqueAddresses = [...new Set(addresses)] 
+            let uniqueAddresses = [...new Set(addresses)]
             console.log("Addresses: ");
             console.log(addresses);
             console.log("Unique Addresses: ");
             console.log(uniqueAddresses);
             await getUserAccountData(lendingPool, uniqueAddresses);
+            await getUserReserveData(lendingPool, uniqueAddresses);
         }, 5000);
 
     } catch (e) {
         console.error(e);
     }
 })();
-
-
