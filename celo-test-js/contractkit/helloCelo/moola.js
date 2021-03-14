@@ -15,11 +15,22 @@ function BN(num) {
 const getLendingPoolReserveData = async () =>{
     const address = await addressProvider.methods.getLendingPool().call();
     const lendingPool = new eth.Contract(LendingPool, address);
-    
   
-    const reserve = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-    const data = await lendingPool.methods.getReserveData(reserve).call();
+    const celoReserve = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+    
+    const configData = await lendingPool.methods.getReserveConfigurationData(celoReserve).call();
+    
+    const data = await lendingPool.methods.getReserveData(celoReserve).call();
+    
     const parsedData = {
+          LoanToValuePercentage: configData.ltv,
+          LiquidationThreshold: configData.liquidationThreshold,
+          LiquidationBonus: configData.liquidationBonus,
+          InterestRateStrategyAddress: configData.interestRateStrategyAddress,
+          UsageAsCollateralEnabled: configData.usageAsCollateralEnabled,
+          UsageAsCollateralEnabled: configData.usageAsCollateralEnabled,
+          BorrowingEnabled: configData.borrowingEnabled,
+          StableBorrowRateEnabled: configData.stableBorrowRateEnabled,
           TotalLiquidity: data.totalLiquidity,
           AvailableLiquidity: data.availableLiquidity,
           TotalBorrowsStable: data.totalBorrowsStable,
@@ -34,6 +45,7 @@ const getLendingPoolReserveData = async () =>{
           MToken: data.aTokenAddress,
           LastUpdate: (new Date(BN(data.lastUpdateTimestamp).multipliedBy(1000).toNumber())).toLocaleString(),
     };
+    
     return parsedData;
 }
 
@@ -48,7 +60,7 @@ const getLendingPoolReserveData = async () =>{
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'
-            }) + " global Celo Lending pool data: ");
+            }) + ", global Celo Lending pool data: ");
             console.table(data);
         }, 5000);
         
