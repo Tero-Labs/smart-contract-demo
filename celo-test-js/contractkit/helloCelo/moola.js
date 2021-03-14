@@ -1,10 +1,10 @@
 const { newKit } = require('@celo/contractkit');
 const kit = newKit('https://alfajores-forno.celo-testnet.org');
-const LendingPoolAddressesProvider = require('../helloCelo/contracts/LendingPoolAddressesProvider.json');
+const LendingPoolAddressesProvider = require('../helloCelo/build/contracts/LendingPoolAddressesProvider.json');
 const addressProvider = new kit.web3.eth.Contract(LendingPoolAddressesProvider, '0x6EAE47ccEFF3c3Ac94971704ccd25C7820121483');
 const BigNumber = require('bignumber.js');
 
-const LendingPool = require('../helloCelo/contracts/LendingPool.json');
+const LendingPool = require('../helloCelo/build/contracts/LendingPool.json');
 const web3 = kit.web3;
 const eth = web3.eth;
 
