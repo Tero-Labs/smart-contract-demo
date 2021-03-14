@@ -53,43 +53,54 @@ const getLendingPoolReserveData = async (reserve) => {
 
 }
 
+const getBLocks = async () => {
+    const blocksLatest = await web3.eth.getBlock("latest")
+        .catch((err) => { throw new Error(`Could not fetch latest block: ${err}`); });
+    const latestBlockNumber = blocksLatest.number;
+    console.log('Latest block: ', blocksLatest.number);
+    for (let i = latestBlockNumber - 11; i < latestBlockNumber - 6; i++) {
+        console.log("Block Number: " + i);
+        let block = await web3.eth.getBlock(i)
+            .catch((err) => { throw new Error(`Could not fetch block: ${err}`); });
+        console.log('Block: ', block);
+    }
+}
+
+const getLogs = async () => {
+
+}
+
+const getLendingPoolData = async () => {
+    const celoReserve = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+    const cusd = await kit.contracts.getStableToken();
+    const cusdReserve = cusd.address;
+    const coins = [
+        { name: "Celo", reserveAddress: celoReserve },
+        { name: "cUSD", reserveAddress: cusdReserve }
+    ];
+    for (let coin of coins) {
+        let data = await getLendingPoolReserveData(coin.reserveAddress);
+        console.log("At " + new Date().toLocaleDateString(undefined, {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        }) + ", global " + coin.name + " Lending pool data: ");
+        console.table(data);
+    }
+}
 
 (async () => {
     try {
-        const celoReserve = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
-        const cusd = await kit.contracts.getStableToken();
-        const cusdReserve = cusd.address;
-        const coins = [
-            { name: "Celo", reserveAddress: celoReserve },
-            { name: "cUSD", reserveAddress: cusdReserve }
-        ];
 
         setInterval(async () => {
             // console.log("\n\n\n\n\n\n-------------------------\n\n\n\n\n\n");
-            const blocksLatest = await web3.eth.getBlock("latest")
-            .catch((err) => { throw new Error(`Could not fetch latest block: ${err}`); });
-            const latestBlockNumber = blocksLatest.number;
-            console.log('Latest block: ', blocksLatest.number);
-            for (let i = latestBlockNumber-11; i < latestBlockNumber-6; i++) {
-                console.log("Block Number: " + i);
-                let block = await web3.eth.getBlock(i)
-                .catch((err) => { throw new Error(`Could not fetch block: ${err}`); });
-                console.log('Block: ', block);
-            }
-            
-            for (let coin of coins) {
-                let data = await getLendingPoolReserveData(coin.reserveAddress);
-                console.log("At " + new Date().toLocaleDateString(undefined, {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                }) + ", global "+ coin.name + " Lending pool data: ");
-                console.table(data);
-            }
+            await getLendingPoolData();
+            await getBLocks();
+
         }, 5000);
 
     } catch (e) {
