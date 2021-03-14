@@ -66,6 +66,18 @@ const getLendingPoolReserveData = async (reserve) => {
         ];
 
         setInterval(async () => {
+            // console.log("\n\n\n\n\n\n-------------------------\n\n\n\n\n\n");
+            const blocksLatest = await web3.eth.getBlock("latest")
+            .catch((err) => { throw new Error(`Could not fetch latest block: ${err}`); });
+            const latestBlockNumber = blocksLatest.number;
+            console.log('Latest block: ', blocksLatest.number);
+            for (let i = latestBlockNumber-11; i < latestBlockNumber-6; i++) {
+                console.log("Block Number: " + i);
+                let block = await web3.eth.getBlock(i)
+                .catch((err) => { throw new Error(`Could not fetch block: ${err}`); });
+                console.log('Block: ', block);
+            }
+            
             for (let coin of coins) {
                 let data = await getLendingPoolReserveData(coin.reserveAddress);
                 console.log("At " + new Date().toLocaleDateString(undefined, {
