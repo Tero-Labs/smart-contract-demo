@@ -62,7 +62,7 @@ def get_lending_pool_reserve_data(reserve_address, lending_pool):
             "LiquidityIndex": data[9],
             "VariableBorrowIndex": data[10],
             "MToken": data[11],
-            "LastUpdate": data[12]
+            "LastUpdate": datetime.fromtimestamp(data[12]).strftime("%m/%d/%Y, %H:%M:%S")
         } 
     }
     return parsed_data
