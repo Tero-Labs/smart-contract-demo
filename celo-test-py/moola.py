@@ -3,13 +3,14 @@ from celo_sdk.kit import Kit
 import asyncio
 from datetime import datetime
 import json
+import time
 with open("../celo-test-py/build/contracts/LendingPoolAddressesProvider.json") as f:
     Lending_Pool_Addresses_Provider = json.load(f) 
 with open("../celo-test-py/build/contracts/LendingPool.json") as f:
     Lending_Pool = json.load(f)
 # abi = contract_json["abi"]
 kit = Kit('https://alfajores-forno.celo-testnet.org')
-
+DELAY_IN_SEC = 10 
 INTEREST_RATE =[ 'NONE','STABLE','VARIABLE' ]
 web3 = kit.w3
 eth = web3.eth
@@ -66,7 +67,7 @@ def get_lending_pool_data(lending_pool):
     coins = get_coins()
     lending_pool_data = []
     for coin in coins:
-        print(coin['name'])
+        # print(coin['name'])
         data = get_lending_pool_reserve_data(coin['reserve_address'], lending_pool)
         lending_pool_data.append({
             "CoinName": coin['name'],
@@ -77,9 +78,9 @@ def get_lending_pool_data(lending_pool):
 def get_blocks(from_block_number, to_block_number):
     blocks = []
     for i in range(from_block_number, to_block_number+1):
-        print("Block Number: " + str(i))
+        # print("Block Number: " + str(i))
         block = eth.getBlock(hex(i))
-        print(block)
+        # print(block)
         blocks.append(block)
     return blocks
 
@@ -136,25 +137,33 @@ def get_user_reserve_data(lending_pool, unique_addresses):
     return all_user_reserve_data
 
 def log_all_data(lending_pool, from_block_number, to_block_number):
-    # lending_pool_data = get_lending_pool_data(lending_pool)
+    lending_pool_data = get_lending_pool_data(lending_pool)
     # print(lending_pool_data)
-    # blocks = get_blocks(from_block_number, to_block_number)
+    blocks = get_blocks(from_block_number, to_block_number)
     logs = get_logs(from_block_number, to_block_number)
     addresses = [log['address'] for log in logs] 
-    unique_addresses = list(set(addresses))
+    unique_addresses = list(set(addresses)) 
     # print("Addresses: ")
     # print(addresses)
     # print("Unique Addresses: ")
     # print(unique_addresses) 
-    # all_user_account_data = get_user_account_data(lending_pool, unique_addresses)
+    all_user_account_data = get_user_account_data(lending_pool, unique_addresses)
     all_user_reserve_data = get_user_reserve_data(lending_pool, unique_addresses)
-    print(all_user_reserve_data)
+    # print(all_user_reserve_data)
     # reserves = lending_pool.functions.getReserves().call()
     # print(reserves)
     # print(all_user_account_data)
-
-# addressProvider = kit.w3.eth.contract(address=account_address, abi=LendingPoolAddressesProvider)
-# lending_pool_contract.functions.getReserveConfigurationData('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE').call()
+    all_data = {
+        "UniqueAddresses": unique_addresses,
+        "FromBlock": from_block_number,
+        "ToBlock": to_block_number,
+        # "BLocks": bLocks,
+        "LendingPoolData": lending_pool_data,
+        "AllUserAccountData": all_user_account_data,
+        "AllUserReserveData": all_user_reserve_data
+    }
+    print(all_data)
+    return all_data
 
 
 def main():
@@ -165,8 +174,17 @@ def main():
     latest_block_number = get_latest_block()
     print('Latest block number: ',latest_block_number)
     from_block_number, to_block_number = latest_block_number-15, latest_block_number - 10
-    log_all_data(lending_pool, from_block_number, to_block_number) 
-  
-  
+    all_data = log_all_data(lending_pool, from_block_number, to_block_number) 
+    current_block_latest = to_block_number
+    while True:
+        time.sleep(DELAY_IN_SEC)
+        latest_block_number = get_latest_block()
+        if current_block_latest != latest_block_number-10:
+            from_block_number = current_block_latest + 1
+            to_block_number = latest_block_number - 10
+            all_data = log_all_data(lending_pool, from_block_number, to_block_number) 
+            current_block_latest = to_block_number
+        
+
 if __name__=="__main__": 
     main() 
