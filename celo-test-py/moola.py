@@ -10,14 +10,9 @@ with open("../celo-test-py/build/contracts/LendingPool.json") as f:
 # abi = contract_json["abi"]
 kit = Kit('https://alfajores-forno.celo-testnet.org')
 
-INTEREST_RATE = {
-    1: 'STABLE',
-    2: 'VARIABLE',
-    0: 'NONE'
-}
+INTEREST_RATE =[ 'NONE','STABLE','VARIABLE' ]
 web3 = kit.w3
 eth = web3.eth
-
 
 
 def get_latest_block(): 
@@ -92,11 +87,72 @@ def get_logs(from_block_number, to_block_number):
     logs = eth.getLogs({'fromBlock': hex(from_block_number), 'toBlock': hex(to_block_number)})
     return logs
 
+def get_user_account_data(lending_pool, unique_addresses):
+    all_user_account_data = []
+    for address in unique_addresses:
+        user_account_data = lending_pool.functions.getUserAccountData(web3.toChecksumAddress(address)).call()
+        parsedUserAccountData = {
+            "TotalLiquidityETH": user_account_data[0],
+            "TotalCollateralETH": user_account_data[1],
+            "TotalBorrowsETH": user_account_data[2],
+            "TotalFeesETH": user_account_data[3],
+            "AvailableBorrowsETH": user_account_data[4],
+            "CurrentLiquidationThreshold": user_account_data[5],
+            "LoanToValuePercentage": user_account_data[6],
+            "HealthFactor": user_account_data[7]
+        }
+        all_user_account_data.append({
+            "UserAddress": address,
+            "UserData": parsedUserAccountData 
+        })
+    return all_user_account_data
+
+def get_user_reserve_data(lending_pool, unique_addresses):
+    coins = get_coins()
+    all_user_reserve_data = []
+    for coin in coins:
+        reserve_specific_user_reserve_data = {"Coin": coin["name"], "Data":[]}
+        for address in unique_addresses:
+            user_reserve_data = lending_pool.functions.getUserReserveData(coin['reserve_address'], web3.toChecksumAddress(address)).call()
+            
+            parsed_data = {
+                "Deposited": user_reserve_data[0],
+                "Borrowed": user_reserve_data[1],
+                "Debt": user_reserve_data[2],
+                "RateMode": INTEREST_RATE[user_reserve_data[3]],
+                "BorrowRate": user_reserve_data[4],
+                "LiquidityRate": user_reserve_data[5],
+                "OriginationFee": user_reserve_data[6],
+                "BorrowIndex": user_reserve_data[7],
+                "LastUpdate": user_reserve_data[8],
+                "IsCollateral": user_reserve_data[9], 
+            }
+           
+            reserve_specific_user_reserve_data["Data"].append({
+                "UserAddress": address,
+                "UserReserveData": parsed_data
+            })
+        all_user_reserve_data.append(reserve_specific_user_reserve_data)
+    return all_user_reserve_data
+
 def log_all_data(lending_pool, from_block_number, to_block_number):
     # lending_pool_data = get_lending_pool_data(lending_pool)
     # print(lending_pool_data)
+    # blocks = get_blocks(from_block_number, to_block_number)
     logs = get_logs(from_block_number, to_block_number)
-    blocks = get_blocks(from_block_number, to_block_number)
+    addresses = [log['address'] for log in logs] 
+    unique_addresses = list(set(addresses))
+    # print("Addresses: ")
+    # print(addresses)
+    # print("Unique Addresses: ")
+    # print(unique_addresses) 
+    # all_user_account_data = get_user_account_data(lending_pool, unique_addresses)
+    all_user_reserve_data = get_user_reserve_data(lending_pool, unique_addresses)
+    print(all_user_reserve_data)
+    # reserves = lending_pool.functions.getReserves().call()
+    # print(reserves)
+    # print(all_user_account_data)
+
 # addressProvider = kit.w3.eth.contract(address=account_address, abi=LendingPoolAddressesProvider)
 # lending_pool_contract.functions.getReserveConfigurationData('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE').call()
 
