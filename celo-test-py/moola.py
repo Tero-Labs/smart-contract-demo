@@ -78,10 +78,25 @@ def get_lending_pool_data(lending_pool):
             "Data": data 
         })
     return lending_pool_data
-        
+
+def get_blocks(from_block_number, to_block_number):
+    blocks = []
+    for i in range(from_block_number, to_block_number+1):
+        print("Block Number: " + str(i))
+        block = eth.getBlock(hex(i))
+        print(block)
+        blocks.append(block)
+    return blocks
+
+def get_logs(from_block_number, to_block_number):
+    logs = eth.getLogs({'fromBlock': hex(from_block_number), 'toBlock': hex(to_block_number)})
+    return logs
+
 def log_all_data(lending_pool, from_block_number, to_block_number):
-    lending_pool_data = get_lending_pool_data(lending_pool)
-    print(lending_pool_data)
+    # lending_pool_data = get_lending_pool_data(lending_pool)
+    # print(lending_pool_data)
+    logs = get_logs(from_block_number, to_block_number)
+    blocks = get_blocks(from_block_number, to_block_number)
 # addressProvider = kit.w3.eth.contract(address=account_address, abi=LendingPoolAddressesProvider)
 # lending_pool_contract.functions.getReserveConfigurationData('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE').call()
 
