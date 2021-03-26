@@ -27,6 +27,24 @@ def get_latest_block():
     web3.middleware_onion.clear()
     blocksLatest = web3.eth.getBlock("latest")
     return int(blocksLatest["number"], 16)
+
+def get_coins():
+    celo_reserve_address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+    cusd_reserve_address = '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1'
+    coins = [{
+        'name':"Celo", "reserve_address": celo_reserve_address
+    }, {
+        'name':"cUSD", "reserve_address": cusd_reserve_address  
+    }]
+    return coins
+
+
+def get_lending_pool_data(lending_pool):
+    coins = get_coins()
+    for coin in coins:
+        print(coin)
+def log_all_data(lending_pool, from_block_number, to_block_number):
+    get_lending_pool_data(lending_pool)
 # addressProvider = kit.w3.eth.contract(address=account_address, abi=LendingPoolAddressesProvider)
 # lending_pool_contract.functions.getReserveConfigurationData('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE').call()
 async def get_lending_pool_reservedata(reserve, lending_pool):
@@ -34,5 +52,7 @@ async def get_lending_pool_reservedata(reserve, lending_pool):
 address = address_provider.functions.getLendingPool().call()
 print(address)
 lending_pool = eth.contract(address= address, abi= Lending_Pool)
-latestBlockNumber = get_latest_block()
-print(latestBlockNumber)
+latest_block_number = get_latest_block()
+print('Latest block number: ',latest_block_number)
+from_block_number, to_block_number = latest_block_number-15, latest_block_number - 10
+log_all_data(lending_pool, from_block_number, to_block_number)

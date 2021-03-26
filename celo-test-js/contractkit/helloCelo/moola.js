@@ -15,7 +15,7 @@ const INTEREST_RATE = {
     1: 'STABLE',
     2: 'VARIABLE',
     0: 'NONE',
-  };
+};
 
 function BN(num) {
     return new BigNumber(num);
@@ -85,6 +85,7 @@ const getCoins = async () => {
     const celoReserve = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
     const cusd = await kit.contracts.getStableToken();
     const cusdReserve = cusd.address;
+    console.log("cusdReserve address: " + cusdReserve);
     const coins = [
         { name: "Celo", reserveAddress: celoReserve },
         { name: "cUSD", reserveAddress: cusdReserve }
@@ -152,25 +153,25 @@ const getLendingPoolData = async (lendingPool) => {
     }
 }
 
-const getLatestBlock = async () =>{
+const getLatestBlock = async () => {
     const blocksLatest = await web3.eth.getBlock("latest")
-                .catch((err) => { throw new Error(`Could not fetch latest block: ${err}`); });
+        .catch((err) => { throw new Error(`Could not fetch latest block: ${err}`); });
     return blocksLatest.number;
 }
 
 const logAllData = async (lendingPool, fromBlockNumber, toBlockNumber) => {
-                await getLendingPoolData(lendingPool);
-                await getBLocks(fromBlockNumber, toBlockNumber);
-                let logs = await getLogs(fromBlockNumber, toBlockNumber);
-                let addresses = logs.map((log) => log.address);
-                let uniqueAddresses = [...new Set(addresses)]
-                console.log("Addresses: ");
-                console.log(addresses);
-                console.log("Unique Addresses: ");
-                console.log(uniqueAddresses);
-                await getUserAccountData(lendingPool, uniqueAddresses);
-                await getUserReserveData(lendingPool, uniqueAddresses);
-                   
+    await getLendingPoolData(lendingPool);
+    await getBLocks(fromBlockNumber, toBlockNumber);
+    let logs = await getLogs(fromBlockNumber, toBlockNumber);
+    let addresses = logs.map((log) => log.address);
+    let uniqueAddresses = [...new Set(addresses)]
+    console.log("Addresses: ");
+    console.log(addresses);
+    console.log("Unique Addresses: ");
+    console.log(uniqueAddresses);
+    await getUserAccountData(lendingPool, uniqueAddresses);
+    await getUserReserveData(lendingPool, uniqueAddresses);
+
 }
 
 
@@ -180,23 +181,23 @@ const logAllData = async (lendingPool, fromBlockNumber, toBlockNumber) => {
         const lendingPool = new eth.Contract(LendingPool, address);
         let latestBlockNumber = await getLatestBlock();
         console.log('Latest block: ', latestBlockNumber);
-        
+
         let fromBlockNumber = latestBlockNumber - 15, toBlockNumber = latestBlockNumber - 10;
         await logAllData(lendingPool, fromBlockNumber, toBlockNumber);
-       console.log("From Block: " + fromBlockNumber);
-       console.log('To block: ', toBlockNumber);
-        let currentBlockLatest = toBlockNumber; 
+        console.log("From Block: " + fromBlockNumber);
+        console.log('To block: ', toBlockNumber);
+        let currentBlockLatest = toBlockNumber;
         setInterval(async () => {
             console.log("Getting latest block...");
             latestBlockNumber = await getLatestBlock();
             // console.log(latestBlockNumber);
             // console.log("\n\n\n\n\n\n-------------------------\n\n\n\n\n\n"); 
-            if(currentBlockLatest !== latestBlockNumber-10){
+            if (currentBlockLatest !== latestBlockNumber - 10) {
                 fromBlockNumber = currentBlockLatest + 1;
-                toBlockNumber = latestBlockNumber-10;
+                toBlockNumber = latestBlockNumber - 10;
                 console.log("fromBlockNumber: " + fromBlockNumber);
                 console.log("toBlockcNumber: " + toBlockNumber);
-               // await logAllData(lendingPool, fromBlockNumber, toBlockNumber);
+                // await logAllData(lendingPool, fromBlockNumber, toBlockNumber);
                 currentBlockLatest = toBlockNumber;
             }
         }, 10000);
