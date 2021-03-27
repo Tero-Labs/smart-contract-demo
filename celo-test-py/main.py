@@ -4,6 +4,19 @@ import asyncio
 from datetime import datetime
 import json
 import time
+from fastapi import FastAPI
+from typing import Optional
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: Optional[str] = None):
+    return {"item_id": item_id, "q": q}
+    
+
 with open("../celo-test-py/build/contracts/LendingPoolAddressesProvider.json") as f:
     Lending_Pool_Addresses_Provider = json.load(f) 
 with open("../celo-test-py/build/contracts/LendingPool.json") as f:
@@ -168,38 +181,19 @@ def log_all_data(lending_pool, latest_block_number, from_block_number, to_block_
         "AllUserAccountData": all_user_account_data,
         "AllUserReserveData": all_user_reserve_data
     }
-    print(all_data)
+    # print(all_data)
     return all_data
 
-
-def main():
+@app.get("/all-moola-data/{current_latest_block}")
+def read_item(current_latest_block: int):
+    from_block_number, to_block_number = 1, 2 #initialization
     latest_block_number = get_latest_block()
-    print('Latest block number: ',latest_block_number)
-    from_block_number, to_block_number = latest_block_number-15, latest_block_number - 10
-    all_data = log_all_data(lending_pool, latest_block_number, from_block_number, to_block_number) 
-    current_block_latest = to_block_number
-    while True:
-        time.sleep(DELAY_IN_SEC)
-        latest_block_number = get_latest_block()
-        if current_block_latest != latest_block_number-10:
-            from_block_number = current_block_latest + 1
-            to_block_number = latest_block_number - 10
-            all_data = log_all_data(lending_pool, latest_block_number, from_block_number, to_block_number) 
-            current_block_latest = to_block_number
-        
-
-if __name__=="__main__": 
-    # main()
-    @app.get("/all-moola-data/{current_latest_block}")
-    def read_item(current_latest_block: int):
-        from_block_number, to_block_number = 1, 2 #initialization
-        latest_block_number = get_latest_block()
-        if current_latest_block == 0:
-            from_block_number, to_block_number = latest_block_number-15, latest_block_number - 5  #for production set from_block_number to 1
-        else:    
-            if latest_block_number-5 <= current_latest_block:
-                return {} 
-            from_block_number, to_block_number = current_latest_block+1, latest_block_number-5 
+    if current_latest_block == 0:
+        from_block_number, to_block_number = latest_block_number-15, latest_block_number - 5  #for production set from_block_number to 1
+    else:    
+        if latest_block_number-5 >= current_latest_block:
+            return {} 
+        from_block_number, to_block_number = current_latest_block+1, latest_block_number-5 
             
-        return log_all_data(lending_pool, latest_block_number, from_block_number, to_block_number)
-    
+    return log_all_data(lending_pool, latest_block_number, from_block_number, to_block_number)
+
