@@ -184,6 +184,12 @@ def log_all_data(lending_pool, latest_block_number, from_block_number, to_block_
     # print(all_data)
     return all_data
 
+'''
+API format: https://morning-waters-87640.herokuapp.com/all-moola-data/%7Bcurrent_latest_block%7D 
+When current_latest_block=0: Will return the data from latest 10 block (excluding the last 5 blocks)
+Otherwise: current_latest_block will refer to the block number upto which the blockchain is already scanned. So if it's less then or equal to the current block number-5 (since we a ignoring the latest 5 block) will return an empty object otherwise will scan the remaining blocks remained to be scanned and fetch the data (again ignoring the latest 5 blocks)
+Example:  https://morning-waters-87640.herokuapp.com/all-moola-data/0 - Will return the 10 relevent blocks info (
+'''
 @app.get("/all-moola-data/{current_latest_block}")
 def read_item(current_latest_block: int):
     from_block_number, to_block_number = 1, 2 #initialization
