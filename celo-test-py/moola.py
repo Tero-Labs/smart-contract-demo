@@ -4,6 +4,8 @@ import asyncio
 from datetime import datetime
 import json
 import time
+ray = 1000000000000000000000000000
+ether = 1000000000000000000
 with open("../celo-test-py/build/contracts/LendingPoolAddressesProvider.json") as f:
     Lending_Pool_Addresses_Provider = json.load(f) 
 with open("../celo-test-py/build/contracts/LendingPool.json") as f:
@@ -20,6 +22,15 @@ address_provider = kit.w3.eth.contract(address=lending_pool_address, abi=Lending
 address = address_provider.functions.getLendingPool().call()
 lending_pool = eth.contract(address= address, abi= Lending_Pool)
 
+
+def getInEther(num):
+    return num/ether
+
+def getInRayRate(num):
+    return str(round((num/ray)*100, 2))+'%'
+
+def getInRay(num):
+    return num/ray    
 
 def get_latest_block(): 
     web3.middleware_onion.clear()
@@ -51,17 +62,17 @@ def get_lending_pool_reserve_data(reserve_address, lending_pool):
             "isActive": config_data[7]
         }, 
         "reservePoolGlobalInfo":{
-            "TotalLiquidity": data[0],
-            "AvailableLiquidity": data[1],
-            "TotalBorrowsStable": data[2],
-            "TotalBorrowsVariable": data[3],
-            "LiquidityRate": data[4],
-            "VariableRate": data[5],
-            "StableRate": data[6],
-            "AverageStableRate": data[7],
-            "UtilizationRate": data[8],# Ut
-            "LiquidityIndex": data[9],
-            "VariableBorrowIndex": data[10],
+            "TotalLiquidity": getInEther(data[0]),
+            "AvailableLiquidity": getInEther(data[1]),
+            "TotalBorrowsStable": getInEther(data[2]),
+            "TotalBorrowsVariable": getInEther(data[3]),
+            "LiquidityRate": getInRayRate(data[4]),
+            "VariableRate": getInRayRate(data[5]),
+            "StableRate": getInRayRate(data[6]),
+            "AverageStableRate": getInRayRate(data[7]),
+            "UtilizationRate": getInRayRate(data[8]),# Ut
+            "LiquidityIndex": getInRay(data[9]),
+            "VariableBorrowIndex": getInRay(data[10]),
             "MToken": data[11],
             "LastUpdate": datetime.fromtimestamp(data[12]).strftime("%m/%d/%Y, %H:%M:%S")
         } 
@@ -98,14 +109,14 @@ def get_user_account_data(lending_pool, unique_addresses):
     for address in unique_addresses:
         user_account_data = lending_pool.functions.getUserAccountData(web3.toChecksumAddress(address)).call()
         parsedUserAccountData = {
-            "TotalLiquidityETH": user_account_data[0],
-            "TotalCollateralETH": user_account_data[1],
-            "TotalBorrowsETH": user_account_data[2],
-            "TotalFeesETH": user_account_data[3],
-            "AvailableBorrowsETH": user_account_data[4],
-            "CurrentLiquidationThreshold": user_account_data[5],
-            "LoanToValuePercentage": user_account_data[6],
-            "HealthFactor": user_account_data[7]
+            "TotalLiquidityETH": getInEther(user_account_data[0]),
+            "TotalCollateralETH": getInEther(user_account_data[1]),
+            "TotalBorrowsETH": getInEther(user_account_data[2]),
+            "TotalFeesETH": getInEther(user_account_data[3]),
+            "AvailableBorrowsETH": getInEther(user_account_data[4]),
+            "CurrentLiquidationThreshold": str(user_account_data[5]) +'%',
+            "LoanToValuePercentage": str(user_account_data[6])+'%',
+            "HealthFactor": getInEther(user_account_data[7])
         }
         all_user_account_data.append({
             "UserAddress": address,
@@ -122,14 +133,14 @@ def get_user_reserve_data(lending_pool, unique_addresses):
             user_reserve_data = lending_pool.functions.getUserReserveData(coin['reserve_address'], web3.toChecksumAddress(address)).call()
             
             parsed_data = {
-                "Deposited": user_reserve_data[0],
-                "Borrowed": user_reserve_data[1],
-                "Debt": user_reserve_data[2],
+                "Deposited": getInEther(user_reserve_data[0]),
+                "Borrowed": getInEther(user_reserve_data[1]),
+                "Debt": getInEther(user_reserve_data[2]),
                 "RateMode": INTEREST_RATE[user_reserve_data[3]],
-                "BorrowRate": user_reserve_data[4],
-                "LiquidityRate": user_reserve_data[5],
-                "OriginationFee": user_reserve_data[6],
-                "BorrowIndex": user_reserve_data[7],
+                "BorrowRate": getInRayRate(user_reserve_data[4]),
+                "LiquidityRate": getInRayRate(user_reserve_data[5]),
+                "OriginationFee": getInEther(user_reserve_data[6]),
+                "BorrowIndex": getInRay(user_reserve_data[7]),
                 "LastUpdate": datetime.fromtimestamp(user_reserve_data[8]).strftime("%m/%d/%Y, %H:%M:%S"),
                 "IsCollateral": user_reserve_data[9], 
             }
@@ -152,8 +163,8 @@ def log_all_data(lending_pool, latest_block_number, from_block_number, to_block_
     # print(addresses)
     # print("Unique Addresses: ")
     # print(unique_addresses) 
-    all_user_account_data = get_user_account_data(lending_pool, unique_addresses)
-    all_user_reserve_data = get_user_reserve_data(lending_pool, unique_addresses)
+    # all_user_account_data = get_user_account_data(lending_pool, unique_addresses)
+    # all_user_reserve_data = get_user_reserve_data(lending_pool, unique_addresses)
     # print(all_user_reserve_data)
     # reserves = lending_pool.functions.getReserves().call()
     # print(reserves)
@@ -165,14 +176,25 @@ def log_all_data(lending_pool, latest_block_number, from_block_number, to_block_
         "ToBlock": to_block_number,
         # "BLocks": bLocks,
         "LendingPoolData": lending_pool_data,
-        "AllUserAccountData": all_user_account_data,
-        "AllUserReserveData": all_user_reserve_data
+        # "AllUserAccountData": all_user_account_data,
+        # "AllUserReserveData": all_user_reserve_data
     }
     print(all_data)
     return all_data
 
+lending_pool_reserves = {
+    "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE": "Celo",
+    "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1": "cUSD"
+}
+
 
 def main():
+    # print(dir(eth))
+    # reserves = lending_pool.functions.getReserves().call()
+    # for reserve_address in reserves:
+    #     print(lending_pool_reserves[reserve_address])
+    #     print(reserve_address)
+        
     latest_block_number = get_latest_block()
     print('Latest block number: ',latest_block_number)
     from_block_number, to_block_number = latest_block_number-15, latest_block_number - 10
@@ -189,17 +211,17 @@ def main():
         
 
 if __name__=="__main__": 
-    # main()
-    @app.get("/all-moola-data/{current_latest_block}")
-    def read_item(current_latest_block: int):
-        from_block_number, to_block_number = 1, 2 #initialization
-        latest_block_number = get_latest_block()
-        if current_latest_block == 0:
-            from_block_number, to_block_number = latest_block_number-15, latest_block_number - 5  #for production set from_block_number to 1
-        else:    
-            if latest_block_number-5 <= current_latest_block:
-                return {} 
-            from_block_number, to_block_number = current_latest_block+1, latest_block_number-5 
+    main()
+    # @app.get("/all-moola-data/{current_latest_block}")
+    # def read_item(current_latest_block: int):
+    #     from_block_number, to_block_number = 1, 2 #initialization
+    #     latest_block_number = get_latest_block()
+    #     if current_latest_block == 0:
+    #         from_block_number, to_block_number = latest_block_number-15, latest_block_number - 5  #for production set from_block_number to 1
+    #     else:    
+    #         if latest_block_number-5 <= current_latest_block:
+    #             return {} 
+    #         from_block_number, to_block_number = current_latest_block+1, latest_block_number-5 
             
-        return log_all_data(lending_pool, latest_block_number, from_block_number, to_block_number)
+    #     return log_all_data(lending_pool, latest_block_number, from_block_number, to_block_number)
     
